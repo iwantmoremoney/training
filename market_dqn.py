@@ -4,16 +4,7 @@ from market_env import MarketEnv
 from market_model_builder import MarketModelBuilder
 from datetime import datetime
 import os
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+import sys
 
 class ExperienceReplay(object):
     def __init__(self, max_memory=100, discount=.9):
@@ -76,15 +67,27 @@ if __name__ == "__main__":
     discount = 0.8
 
     from keras.optimizers import SGD
-    model = MarketModelBuilder('model').getModel()
+    m = MarketModelBuilder()
+    model = m.getModel()
     sgd = SGD(lr = 0.001, decay = 1e-6, momentum = 0.9, nesterov = True)
     model.compile(loss='mse', optimizer='rmsprop')
 
     # Initialize experience replay object
     exp_replay = ExperienceReplay(max_memory = max_memory, discount = discount)
 
-    print "[INFO][DATA] {} {}".format( dataset, os.popen('git ls-tree master data').read().strip() ) 
-    print "[INFO][ENV] {} {}".format( dataset, os.popen('git show | head -n 1').read().strip() ) 
+    print "[INFO][VER][DATA] {} {}".format( dataset, os.popen('git ls-tree master data').read().strip() ) 
+    print "[INFO][VER][ENV] {} {}".format( dataset, os.popen('git show | head -n 1').read().strip() ) 
+    print "[INFO][VER][MODEL] {}".format( m.name() )
+
+    if not os.path.exists("reports"):
+        print '[ERROR] No reports folder.  Please submodule init and update'
+        sys.exit()
+    if not os.path.exists("reports/{}".format(m.name())):
+        os.mkdir("reports/{}".format(m.name()))
+    file_model = "reports/{}/model".format(m.name())
+
+    if os.path.exists(file_model):
+        print '[WARNING] {} model existed.  Overwrite it.'.format( m.name() )
 
     # Train
     win_cnt = 0
@@ -119,10 +122,10 @@ if __name__ == "__main__":
             #print input_t[0]
             cumReward += reward
 
-            if env.actions[action] in ( 'HOLD' ):
-                print "%08s  %05s  %05.2f  %010f" % ( info['date'], "", info['close'], info['balance'][2] )
+            if info['action'] in ( 'HOLD' ):
+                print "%08s  %15s  %05.2f  %010f" % ( info['date'], "", info['close'], info['balance'][2] )
             else:
-                print "%08s  %05s  %05.2f  %010f" % ( info['date'], env.actions[action], info['close'], info['balance'][2] )
+                print "%08s  %15s  %05.2f  %010f" % ( info['date'], info['action'], info['close'], info['balance'][2] )
             print("[INFO][BALANCE] {}".format( info['balance'] ) )
 
             # store experience
@@ -139,5 +142,5 @@ if __name__ == "__main__":
         print("[INFO][EPOCH] Epoch {:03d}/{} | Total: {:10.2f} | Ratio: {} | Status: {} | Loss {:.4f} | Reward {:.4f} | Win count {} | Epsilon {:.4f} | Time: {}".format(e, epoch, info['balance'][2], info['ratio'], info['status'], loss, cumReward, win_cnt, epsilon, datetime.now() - start_time ))
         print("[INFO][POSITION] {}".format( info['position'] ) )
         # Save trained model weights and architecture, this will be used by the visualization code
-        model.save_weights( "model", overwrite=True)
+        model.save_weights( file_model, overwrite=True)
         epsilon = max(min_epsilon, epsilon * 0.99)

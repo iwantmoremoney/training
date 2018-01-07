@@ -29,7 +29,7 @@ class MarketEnv(gym.Env):
     def __init__(self, dataset, init_budget=10000, scope=60, max_cnt=90 ):
         self.scope = scope
         self.init_budget = init_budget
-        self.info = { 'date': None, 'status': 'INIT', 'balance': [0,0,0], 'position':[], 'ratio': 100 }
+        self.info = { 'date': None, 'status': 'INIT', 'balance': [0,0,0], 'position':[], 'ratio': 100, 'action': None }
         self.max_cnt = max_cnt
 
         self.targetCodes = []
@@ -41,8 +41,8 @@ class MarketEnv(gym.Env):
                     self.train_data[f] = load_data('/'.join([dataset,f]))
                     
         self.actions = [
-            "BUY",
-            "SELL",
+            "LONG",
+            "SHORT",
             "HOLD"
         ]
 
@@ -62,18 +62,24 @@ class MarketEnv(gym.Env):
         self.info['date'] = self.train_data[self.pick][self.index][0]
 
         price = self.train_data[self.pick][self.index][3]
-        if self.actions[action] == "BUY":
-            self.balance -= price 
-            if self.boughts != [] and self.boughts[0] < 0:
-                self.boughts.pop(0)
-            else:
+        self.info['action'] = 'HOLD'
+        if self.boughts == []:
+            if self.actions[action] in ( "LONG", "SHORT" ):
+                self.balance -= 5000 
+            if self.actions[action] == 'LONG':
+                self.info['action'] = 'OPEN_LONG'
                 self.boughts.append( price )
-        elif self.actions[action] == "SELL":
-            self.balance += price 
-            if self.boughts != [] and self.boughts[0] > 0:
-                self.boughts.pop(0)
-            else:
+            elif self.actions[action] == 'SHORT':
+                self.info['action'] = 'OPEN_SHORT'
                 self.boughts.append( -price )
+        elif self.boughts[0] > 0 and self.actions[action] == 'SHORT':
+            self.balance += 5000 + ( self.boughts[0] - price ) * 20
+            self.boughts.pop(0)
+            self.info['action'] = 'CLOSE_LONG'
+        elif self.boughts[0] < 0 and self.actions[action] == 'LONG':
+            self.balance += 5000 + ( self.boughts[0] + price ) * 20
+            self.boughts.pop(0)
+            self.info['action'] = 'CLOSE_SHORT'
 
         self.reward = sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * price - sum( self.boughts ) 
 
@@ -131,12 +137,13 @@ class MarketEnv(gym.Env):
         k_c = [ [x[3]] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
         k_v = [ [x[5]] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
 
+        price = self.train_data[self.pick][self.index][3]
         balance = self.balance
-        position = sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * self.train_data[self.pick][self.index][3] 
-        size = len(self.boughts)
+        position = sum( [ price - x if x > 0 else price + x for x in self.boughts ] )
+        size = sum( [ 1 if x > 0 else -1 for x in self.boughts ] )
         self.state = [ np.array([[ balance, size, position ]]), np.array([[ k_c, k_v ]]) ]
-        self.info['balance'] = ( balance, position, balance+position )
+        self.info['balance'] = ( balance, position, balance+position+len(self.boughts)*5000 )
         self.info['close'] = self.train_data[self.pick][self.index][3]
         self.info['position'] = self.boughts
-        self.info['ratio'] = int( (balance + position) * 100 / self.init_budget )
+        self.info['ratio'] = int( (balance + positioni + len(self.boughts)*5000) * 100 / self.init_budget )
 

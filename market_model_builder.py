@@ -54,6 +54,8 @@ class MarketPolicyGradientModelBuilder(AbstractModelBuilder):
         return model
 
 class MarketModelBuilder(AbstractModelBuilder):
+    def name(self):
+        return 'daily-k.3s.simple'
     
     def buildModel(self):
         from keras.models import Model
