@@ -1,3 +1,6 @@
 [submodule "data"]
 	path = data
 	url = https://github.com/iwantmoremoney/data.git
+[submodule "reports"]
+	path = reports
+	url = https://github.com/iwantmoremoney/reports.git

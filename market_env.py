@@ -145,5 +145,5 @@ class MarketEnv(gym.Env):
         self.info['balance'] = ( balance, position, balance+position+len(self.boughts)*5000 )
         self.info['close'] = self.train_data[self.pick][self.index][3]
         self.info['position'] = self.boughts
-        self.info['ratio'] = int( (balance + positioni + len(self.boughts)*5000) * 100 / self.init_budget )
+        self.info['ratio'] = int( (balance + position + len(self.boughts)*5000) * 100 / self.init_budget )
 
