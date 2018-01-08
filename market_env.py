@@ -27,6 +27,8 @@ def load_data( filename ):
 
 class MarketEnv(gym.Env):
     def __init__(self, dataset, init_budget=10000, scope=60, max_cnt=90 ):
+        print("[INFO][GYM] {}".format(__file__))
+        print("[INFO][GYM][PARAMETER] budget=%d, scope=%d, trade=%d".format( init_budget, scope, max_cnt ) )
         self.scope = scope
         self.init_budget = init_budget
         self.info = { 'date': None, 'status': 'INIT', 'balance': [0,0,0], 'position':[], 'ratio': 100, 'action': None }
