@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import logging
-from skilog import log
 
 class ExperienceReplay(object):
     def __init__(self, max_memory=100, discount=.9):
@@ -73,6 +72,7 @@ if __name__ == "__main__":
         os.mkdir("reports/{}".format(model_name))
 
     sys.stdout = open(file_log, 'w')
+    from skilog import log
 
     if 'model3' in model_name.split('_')[0]:
         market_env = __import__('models.market_env_3', fromlist=['MarketEnv'])  
