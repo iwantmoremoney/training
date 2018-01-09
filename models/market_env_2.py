@@ -46,7 +46,6 @@ class MarketEnv(gym.Env):
         self.actions = [
             "LONG",
             "SHORT",
-            "HOLD"
         ]
 
         self.action_space = spaces.Discrete(len(self.actions))

@@ -1,5 +1,6 @@
 import numpy as np
 from os import path
+import re
 
 from keras.models import Sequential, Model
 from keras.layers.core import Dense, Dropout
@@ -27,7 +28,7 @@ class AbstractModelBuilder(object):
 
 class MarketModelBuilder(AbstractModelBuilder):
     def name(self):
-        return 'dailyk_3_simple'
+        return path.splitext(path.basename(__file__))[0] 
     
     def buildModel(self):
         from keras.models import Model

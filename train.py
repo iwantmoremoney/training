@@ -1,10 +1,11 @@
 import numpy as np
 
-from market_env import MarketEnv
-from market_model_builder import MarketModelBuilder
 from datetime import datetime
 import os
+import re
 import sys
+import logging
+from skilog import log
 
 class ExperienceReplay(object):
     def __init__(self, max_memory=100, discount=.9):
@@ -56,7 +57,34 @@ if __name__ == "__main__":
     import codecs
 
     dataset = sys.argv[1]
-    env = MarketEnv( dataset=dataset)
+    if dataset[-1] == '/':
+        dataset = dataset[:-1]
+    if len(sys.argv) > 2:
+        model_name = os.path.splitext(os.path.basename(sys.argv[2]))[0]
+    else:
+        model_name = 'model3_dailyk_3_simple'
+
+    file_log = "reports/{}/log.{}.{}".format(model_name, os.path.basename(dataset), datetime.now().strftime("%Y%m%d_%H%M%S"))
+        
+    if not os.path.exists("reports"):
+        log.error(' No reports folder.  Please submodule init and update')
+        sys.exit()
+    if not os.path.exists("reports/{}".format(model_name)):
+        os.mkdir("reports/{}".format(model_name))
+
+    sys.stdout = open(file_log, 'w')
+
+    if 'model3' in model_name.split('_')[0]:
+        market_env = __import__('models.market_env_3', fromlist=['MarketEnv'])  
+    elif 'model2' in model_name.split('_')[0]: 
+        market_env = __import__('models.market_env_2', fromlist=['MarketEnv'])  
+    else:
+        log.error(' No matched Env..')
+        sys.exit()
+        
+    env = market_env.MarketEnv( dataset=dataset )
+    market_model = __import__('models.{}'.format(model_name), fromlist=['MarketModelBuilder'])  
+    m = market_model.MarketModelBuilder()
 
     # parameters
     epsilon = .5  # exploration
@@ -67,7 +95,6 @@ if __name__ == "__main__":
     discount = 0.8
 
     from keras.optimizers import SGD
-    m = MarketModelBuilder()
     model = m.getModel()
     sgd = SGD(lr = 0.001, decay = 1e-6, momentum = 0.9, nesterov = True)
     model.compile(loss='mse', optimizer='rmsprop')
@@ -75,19 +102,13 @@ if __name__ == "__main__":
     # Initialize experience replay object
     exp_replay = ExperienceReplay(max_memory = max_memory, discount = discount)
 
-    print "[INFO][VER][DATA] {} {}".format( dataset, os.popen('git ls-tree master data').read().strip() ) 
-    print "[INFO][VER][ENV] {} {}".format( __file__, os.popen('git show | head -n 1').read().strip() ) 
-    print "[INFO][VER][MODEL] {}".format( m.name() )
-
-    if not os.path.exists("reports"):
-        print '[ERROR] No reports folder.  Please submodule init and update'
-        sys.exit()
-    if not os.path.exists("reports/{}".format(m.name())):
-        os.mkdir("reports/{}".format(m.name()))
+    log.info( "[VER][DATA] {} {}".format( dataset, os.popen('git ls-tree master data').read().strip() ) ) 
+    log.info( "[VER][ENV] {} {}".format( __file__, os.popen('git show | head -n 1').read().strip() ) ) 
+    log.info( "[VER][MODEL] {}".format( m.name() ) )
     file_model = "reports/{}/model".format(m.name())
 
     if os.path.exists(file_model):
-        print '[WARNING] {} model existed.  Overwrite it.'.format( m.name() )
+        log.warn(' {} model existed.  Overwrite it.'.format( m.name() ) )
 
     # Train
     win_cnt = 0
@@ -114,7 +135,7 @@ if __name__ == "__main__":
 
                 #print "  ".join(["%s:%.2f" % (l, i) for l, i in zip(env.actions, q[0].tolist())])
                 if np.nan in q:
-                    print "OCCUR NaN!!!"
+                    log.error("OCCUR NaN!!!")
                     exit()
 
             # apply action, get rewards and new state
@@ -123,10 +144,10 @@ if __name__ == "__main__":
             cumReward += reward
 
             if info['action'] in ( 'HOLD' ):
-                print "%08s  %15s  %05.2f  %010f" % ( info['date'], "", info['close'], info['balance'][2] )
+                log.info(" %08s  %15s  %05.2f  %010f" % ( info['date'], "", info['close'], info['balance'][2] ) )
             else:
-                print "%08s  %15s  %05.2f  %010f" % ( info['date'], info['action'], info['close'], info['balance'][2] )
-            print("[INFO][BALANCE] {}".format( info['balance'] ) )
+                log.info(" %08s  %15s  %05.2f  %010f" % ( info['date'], info['action'], info['close'], info['balance'][2] ) )
+            log.debug("[BALANCE] {}".format( info['balance'] ) )
 
             # store experience
             exp_replay.remember([input_tm1, action, reward, input_t], game_over)
@@ -139,8 +160,8 @@ if __name__ == "__main__":
         if info['ratio'] > 100 and info['status'] == 'FINISH' and game_over:
             win_cnt += 1
 
-        print("[INFO][EPOCH] Epoch {:03d}/{} | Total: {:10.2f} | Ratio: {} | Status: {} | Loss {:.4f} | Reward {:.4f} | Win count {} | Epsilon {:.4f} | Time: {}".format(e, epoch, info['balance'][2], info['ratio'], info['status'], loss, cumReward, win_cnt, epsilon, datetime.now() - start_time ))
-        print("[INFO][POSITION] {}".format( info['position'] ) )
+        log.info("[EPOCH] Epoch {:03d}/{} | Total: {:10.2f} | Ratio: {} | Status: {} | Loss {:.4f} | Reward {:.4f} | Win count {} | Epsilon {:.4f} | Time: {}".format(e, epoch, info['balance'][2], info['ratio'], info['status'], loss, cumReward, win_cnt, epsilon, datetime.now() - start_time ))
+        log.debug("[POSITION] {}".format( info['position'] ) )
         # Save trained model weights and architecture, this will be used by the visualization code
         model.save_weights( file_model, overwrite=True)
         epsilon = max(min_epsilon, epsilon * 0.99)
