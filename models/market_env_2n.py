@@ -46,7 +46,6 @@ class MarketEnv(gym.Env):
         self.actions = [
             "LONG",
             "SHORT",
-            "HOLD"
         ]
 
         self.action_space = spaces.Discrete(len(self.actions))
@@ -137,8 +136,10 @@ class MarketEnv(gym.Env):
         return int(random() * 100)
 
     def update(self):
-        k_c = [ [x[3]] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
-        k_v = [ [x[5]] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
+        norm_c = self.train_data[self.pick][self.index-58][3]
+        norm_v = self.train_data[self.pick][self.index-58][5]
+        k_c = [ [x[3]/norm_c] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
+        k_v = [ [x[5]/norm_v] for x in self.train_data[self.pick][self.index-59:self.index+1] ]
 
         price = self.train_data[self.pick][self.index][3]
         balance = self.balance
