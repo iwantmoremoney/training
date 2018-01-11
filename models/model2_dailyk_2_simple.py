@@ -28,7 +28,7 @@ class AbstractModelBuilder(object):
 
 class MarketModelBuilder(AbstractModelBuilder):
     def name(self):
-        return re.sub( 'model_', '', path.splitext(path.basename(__file__))[0] ) 
+        return path.splitext(path.basename(__file__))[0] 
     
     def buildModel(self):
         from keras.models import Model
@@ -46,10 +46,15 @@ class MarketModelBuilder(AbstractModelBuilder):
         S = Input(shape=[2, 60, 1])
         inputs.append(S)
 
-        h = Convolution2D(512, 2, 1, border_mode = 'valid')(S)
+        h = Convolution2D(1024, 60, 1, border_mode = 'valid')(S)
         h = LeakyReLU(0.001)(h)
         h = Flatten()(h)
-        m = Dense(512)(h)
+        h = Dense(1024)(h)
+        h = LeakyReLU(0.001)(h)
+        h = Dropout(dr_rate)(h)
+        merges.append(h)
+        m = merge(merges, mode = 'concat', concat_axis = 1)
+        m = Dense(512)(m)
         m = LeakyReLU(0.001)(m)
         m = Dropout(dr_rate)(m)
         m = Dense(256)(m)
