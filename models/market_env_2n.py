@@ -64,6 +64,7 @@ class MarketEnv(gym.Env):
         self.info['date'] = self.train_data[self.pick][self.index][0]
 
         price = self.train_data[self.pick][self.index][3]
+        base = self.train_data[self.pick][self.index-58][3]
         self.info['action'] = 'HOLD'
         if self.boughts == []:
             if self.actions[action] in ( "LONG", "SHORT" ):
@@ -83,13 +84,9 @@ class MarketEnv(gym.Env):
             self.boughts.pop(0)
             self.info['action'] = 'CLOSE_SHORT'
 
-        self.reward = sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * price - sum( self.boughts ) 
+        self.reward = ( sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * price - sum( self.boughts ) ) / base 
 
-        if self.balance < 0:
-            self.reward = - self.init_budget
-            self.info['status'] = 'BROKEN'
-            self.done = True
-        elif self.cnt == self.max_cnt:
+        if self.cnt == self.max_cnt:
             self.info['status'] = 'FINISH'
             self.done = True
         else:
