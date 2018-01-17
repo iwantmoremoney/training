@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # parameters
     epsilon = .5  # exploration
     min_epsilon = 0.1
-    epoch = 10000
+    epoch = 100000
     max_memory = 5000
     batch_size = 90
     discount = 0.8
