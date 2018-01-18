@@ -74,13 +74,8 @@ if __name__ == "__main__":
     sys.stdout = open(file_log, 'w')
     from skilog import log
 
-    if 'model3' in model_name.split('_')[0]:
-        market_env = __import__('models.market_env_3', fromlist=['MarketEnv'])  
-    elif 'model2' in model_name.split('_')[0]: 
-        market_env = __import__('models.market_env_2', fromlist=['MarketEnv'])  
-    else:
-        log.error(' No matched Env..')
-        sys.exit()
+    mkeyname = re.sub( 'model', '', model_name.split('_')[0] )
+    market_env = __import__('models.market_env_{}'.format(mkeyname), fromlist=['MarketEnv'])
         
     env = market_env.MarketEnv( dataset=dataset )
     market_model = __import__('models.{}'.format(model_name), fromlist=['MarketModelBuilder'])  
