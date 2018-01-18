@@ -70,6 +70,11 @@ if __name__ == "__main__":
         sys.exit()
     if not os.path.exists("reports/{}".format(model_name)):
         os.mkdir("reports/{}".format(model_name))
+    if not os.path.exists("trained_model"):
+        log.error(' No trained_model folder.  Please link to Dropbox one')
+        sys.exit()
+    if not os.path.exists("trained_model/{}".format(model_name)):
+        os.mkdir("trained_model/{}".format(model_name))
 
     sys.stdout = open(file_log, 'w')
     from skilog import log
@@ -80,6 +85,8 @@ if __name__ == "__main__":
     env = market_env.MarketEnv( dataset=dataset )
     market_model = __import__('models.{}'.format(model_name), fromlist=['MarketModelBuilder'])  
     m = market_model.MarketModelBuilder()
+
+    file_model = "trained_model/{}/model".format(model_name)
 
     # parameters
     epsilon = .5  # exploration
@@ -100,7 +107,6 @@ if __name__ == "__main__":
     log.info( "[VER][DATA] {} {}".format( dataset, os.popen('git ls-tree master data').read().strip() ) ) 
     log.info( "[VER][ENV] {} {}".format( __file__, os.popen('git show | head -n 1').read().strip() ) ) 
     log.info( "[VER][MODEL] {}".format( m.name() ) )
-    file_model = "reports/{}/model".format(m.name())
 
     if os.path.exists(file_model):
         log.warn(' {} model existed.  Overwrite it.'.format( m.name() ) )
