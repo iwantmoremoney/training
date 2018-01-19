@@ -64,6 +64,8 @@ class MarketEnv(gym.Env):
         self.info['date'] = self.train_data[self.pick][self.index][0]
 
         price = self.train_data[self.pick][self.index][3]
+        self.reward = sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * price - sum( self.boughts ) 
+
         self.info['action'] = 'HOLD'
         if self.boughts == []:
             if self.actions[action] in ( "LONG", "SHORT" ):
@@ -83,7 +85,6 @@ class MarketEnv(gym.Env):
             self.boughts.pop(0)
             self.info['action'] = 'CLOSE_SHORT'
 
-        self.reward = sum( [ 1 if x > 0 else -1 for x in self.boughts] ) * price - sum( self.boughts ) 
 
         if self.balance < 0:
             self.reward = - self.init_budget
@@ -148,4 +149,5 @@ class MarketEnv(gym.Env):
         self.info['close'] = self.train_data[self.pick][self.index][3]
         self.info['position'] = self.boughts
         self.info['ratio'] = int( (balance + position + len(self.boughts)*5000) * 100 / self.init_budget )
+        self.info['reward'] = self.reward
 

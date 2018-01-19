@@ -148,7 +148,7 @@ if __name__ == "__main__":
                 log.info(" %08s  %15s  %05.2f  %010f" % ( info['date'], "", info['close'], info['balance'][2] ) )
             else:
                 log.info(" %08s  %15s  %05.2f  %010f" % ( info['date'], info['action'], info['close'], info['balance'][2] ) )
-            log.debug("[BALANCE] {}".format( info['balance'] ) )
+            log.debug("[BALANCE] {}  [REWARD] {}".format( info['balance'], reward ) )
 
             # store experience
             exp_replay.remember([input_tm1, action, reward, input_t], game_over)
