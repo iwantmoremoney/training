@@ -84,9 +84,9 @@ if __name__ == "__main__":
         
     env = market_env.MarketEnv( dataset=dataset )
     market_model = __import__('models.{}'.format(model_name), fromlist=['MarketModelBuilder'])  
-    m = market_model.MarketModelBuilder()
-
     file_model = "trained_model/{}/model".format(model_name)
+    m = market_model.MarketModelBuilder(file_model)
+
 
     # parameters
     epsilon = .5  # exploration
